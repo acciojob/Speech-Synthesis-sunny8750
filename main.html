@@ -1,43 +1,143 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Speech Synthesis</title>
-  <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Speech Synthesis</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Pacifico"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
 
     <div class="voiceinator">
-
       <h1>The Voiceinator 5000</h1>
 
       <select name="voice" id="voices">
         <option value="">Select A Voice</option>
       </select>
 
-      <label for="rate">Rate:</label>
-      <input name="rate" type="range" min="0" max="3" value="1" step="0.1">
+      <div>
+        <label for="rate">Rate:</label>
+        <input
+          id="rate"
+          name="rate"
+          type="range"
+          min="0"
+          max="3"
+          value="1"
+          step="0.1"
+        />
+        <div class="rate-value"></div>
+      </div>
 
-      <label for="pitch">Pitch:</label>
-
-      <input name="pitch" type="range" min="0" max="2" step="0.1">
+      <div>
+        <label for="pitch">Pitch:</label>
+        <input
+          id="pitch"
+          name="pitch"
+          type="range"
+          min="0"
+          max="2"
+          step="0.1"
+        />
+        <div class="pitch-value"></div>
+      </div>
       <textarea name="text">Hello! I love JavaScript 👍</textarea>
       <button id="stop">Stop!</button>
       <button id="speak">Speak</button>
-
     </div>
 
-<script>
-  const msg = new SpeechSynthesisUtterance();
-  let voices = [];
-  const voicesDropdown = document.querySelector('[name="voice"]');
-  const options = document.querySelectorAll('[type="range"], [name="text"]');
-  const speakButton = document.querySelector('#speak');
-  const stopButton = document.querySelector('#stop');
+    <script>
+      const utterThis = new SpeechSynthesisUtterance();
+      const synth = window.speechSynthesis;
 
-  //Your code goes here
-</script>
+      const stopButton = document.querySelector("#stop");
+      stopButton.addEventListener("click", () => synth.cancel());
 
-</body>
+      const speakButton = document.querySelector("#speak");
+      speakButton.addEventListener("click", () => speak());
+
+      const inputForm = document.querySelector("textarea");
+      const voiceSelect = document.querySelector("select");
+
+      const pitch = document.querySelector("#pitch");
+      const pitchValue = document.querySelector(".pitch-value");
+      const rate = document.querySelector("#rate");
+      const rateValue = document.querySelector(".rate-value");
+
+      let voices = [];
+
+      function populateVoiceList() {
+        voices = synth.getVoices().sort(function (a, b) {
+          const aname = a.name.toUpperCase();
+          const bname = b.name.toUpperCase();
+
+          if (aname < bname) {
+            return -1;
+          } else if (aname == bname) {
+            return 0;
+          } else {
+            return +1;
+          }
+        });
+        const selectedIndex =
+          voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
+        voiceSelect.innerHTML = "";
+
+        for (let i = 0; i < voices.length; i++) {
+          const option = document.createElement("option");
+          option.textContent = `${voices[i].name} (${voices[i].lang})`;
+
+          if (voices[i].default) {
+            option.textContent += " -- DEFAULT";
+          }
+
+          option.setAttribute("data-lang", voices[i].lang);
+          option.setAttribute("data-name", voices[i].name);
+          voiceSelect.appendChild(option);
+        }
+        voiceSelect.selectedIndex = selectedIndex;
+      }
+
+      populateVoiceList();
+
+      if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = populateVoiceList;
+      }
+
+      function speak() {
+        if (synth.speaking) {
+          console.error("speechSynthesis.speaking");
+          return;
+        }
+
+        if (inputForm.value.trim() !== "") {
+          utterThis.text = inputForm.value;
+          const selectedOption =
+            voiceSelect.selectedOptions[0].getAttribute("data-name");
+
+          for (let i = 0; i < voices.length; i++) {
+            if (voices[i].name === selectedOption) {
+              utterThis.voice = voices[i];
+              break;
+            }
+          }
+          utterThis.pitch = pitch.value;
+          utterThis.rate = rate.value;
+          synth.speak(utterThis);
+        }
+      }
+
+      pitch.onchange = function () {
+        pitchValue.textContent = pitch.value;
+      };
+
+      rate.onchange = function () {
+        rateValue.textContent = rate.value;
+      };
+    </script>
+  </body>
 </html>
